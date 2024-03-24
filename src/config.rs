@@ -1,5 +1,6 @@
 use crate::VncError;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use tracing::trace;
 
 /// All supported vnc encodings
 #[allow(dead_code)]
@@ -46,6 +47,10 @@ impl From<[u8; 12]> for VncVersion {
             b"RFB 003.003\n" => VncVersion::RFB33,
             b"RFB 003.007\n" => VncVersion::RFB37,
             b"RFB 003.008\n" => VncVersion::RFB38,
+            b"reM 001.001\n" => {
+                trace!("Using RFB 003.008 version for the Remarkable tablet");
+                VncVersion::RFB38
+            }
             // https://www.rfc-editor.org/rfc/rfc6143#section-7.1.1
             //  Other version numbers are reported by some servers and clients,
             //  but should be interpreted as 3.3 since they do not implement the
@@ -72,6 +77,7 @@ impl VncVersion {
     {
         let mut buffer = [0_u8; 12];
         reader.read_exact(&mut buffer).await?;
+
         Ok(buffer.into())
     }
 
@@ -136,9 +142,9 @@ pub struct PixelFormat {
     pub red_shift: u8,
     pub green_shift: u8,
     pub blue_shift: u8,
-    _padding_1: u8,
-    _padding_2: u8,
-    _padding_3: u8,
+    pub _padding_1: u8,
+    pub _padding_2: u8,
+    pub _padding_3: u8,
 }
 
 impl From<PixelFormat> for Vec<u8> {
